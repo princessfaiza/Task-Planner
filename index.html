@@ -701,6 +701,20 @@ document.addEventListener("DOMContentLoaded", () => {
       .then(reg => console.log('SW registered', reg))
       .catch(err => console.error('Service worker failed:', err));
   });
+     if ('Notification' in window && navigator.serviceWorker) {
+  Notification.requestPermission().then(permission => {
+    if (permission === 'granted') {
+      console.log('Notification permission granted.');
+    }
+  });
+       function testPush() {
+  navigator.serviceWorker.ready.then(registration => {
+    registration.showNotification('Task Alert', {
+      body: 'Your task starts in 10 minutes!',
+      icon: '/icon.webp',
+      badge: '/icon.webp'
+    });
+  });
 }
 </script>
 </body>
