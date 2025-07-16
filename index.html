@@ -695,20 +695,12 @@ document.addEventListener("DOMContentLoaded", () => {
   document.body.className = savedTheme;
 });
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('data:application/javascript;charset=utf-8;base64,' + btoa(`
-        self.addEventListener('install', (e) => {
-          self.skipWaiting();
-        });
-
-        self.addEventListener('activate', (e) => {
-          self.clients.claim();
-        });
-
-        self.addEventListener('fetch', (event) => {
-          event.respondWith(fetch(event.request).catch(() => caches.match(event.request)));
-        });
-      `)).catch((e) => console.error("Service worker failed:", e));
-    }
-  </script>
+    navigator.serviceWorker.register('service-worker.js').then(reg => {
+      console.log('SW registered!', reg);
+    }).catch(err => {
+      console.error('SW registration failed:', err);
+    });
+  }
+</script>
 </body>
 </html>
