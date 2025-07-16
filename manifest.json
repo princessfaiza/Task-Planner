@@ -1,0 +1,16 @@
+{
+  "name": "Task Planner",
+  "short_name": "Planner",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "src": "data:image/webp;base64,UklGRvgMAABXRUJQVlA4IOwMAACwRACdASrXANcAPp1Enkslo6MhprarQLATiWNuul16U2MY1OAn2ZfRPt/edxfQf2S/wHbh4B+ckFe1D7NJ/P6rvX4ATqe0C9s8xPBzSg/Q/YA/QvrD/6nj6+wenj9iH7pe0ka4/FUKoVQqhU3rMdMwidxDhbpkP8rHQ9Mqv+XEaLYw+oq8ca69CEsskOHGOZH//Q4iGe9zUHW5RIhwozto6riolc9dRvQAcENkQFr34gR7uA4ubfER08jj1SyLE/ZYrC2kkQagP5HZc55SZHEw4P58Yo2RSD6reDuJLnJ1qODUXPHckiTij3hIxCLggQrnVQLEPlDq2YiOuEugsXmju8KRnHHyf//tKRpfNHMl8imA/DKONO34zS5eyoU/NzCWHHMVIlWKfAVhr3Am7OaxjVxCaOlGC3jikHeA0IB1S9SIrcE0m2iwOIeTaK7pTL0KgdWeXJYGagNgYCzt+tnQs35H1K5U/q47VvVlwOtA+0Pk4WB+Z2L5xq1eJmdVag7N28bhfUTtpnCmfYTRmd0c9HpxhhnrpP8Wghn6vor/fFQGpW0TMNJQPHcfmt1ZZT2WYIzMSqUgcz4heEfYuvZLA3j2bClkFwlhvv3u19AHNKn+ClUc7eFffzCtA5+KbfVCRIjxBEe1V079FcNMKWvnMjfnFZd6zVILfpxD1+85kjyGpqYZ39uiJemMzrXK5ucAFbfD8bhtW1GGJP4xe+DGvvREEXt/b+2wtzo8dAAA..."
+      ,
+      "sizes": "512x512",
+      "type": "image/webp"
+    }
+  ]
+}
