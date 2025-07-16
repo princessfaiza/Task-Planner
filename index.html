@@ -4,33 +4,27 @@
   <meta charset="UTF-8">
   <title>Task Planner</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
-  <!-- Manifest (inline) -->
-  <link rel="manifest" href='data:application/manifest+json,{
-    "name":"Task Planner",
-    "short_name":"Planner",
-    "start_url":".",
-    "display":"standalone",
-    "background_color":"#000000",
-    "theme_color":"#000000",
-    "icons":[
-      {
-        "src":"data:image/webp;base64,UklGRjAQAABXRUJQVlA4ICQQAACwXwCdASoYARgB...<your full base64 icon here>",
-        "sizes":"512x512",
-        "type":"image/webp"
-      }
-    ]
-  }'>
-
-  <!-- Apple touch icon -->
   <link rel="apple-touch-icon" href="data:image/webp;base64,UklGRjAQAABXRUJQVlA4ICQQAACwXwCdASoYARgB...<same icon here>">
-
-  <!-- Meta tags to trigger install prompt on mobile -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#000000">
-
-  <!-- CSS (inline) -->
+   <script type="application/manifest+json">
+  {
+    "name": "Task Planner",
+    "short_name": "Planner",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#000000",
+    "theme_color": "#000000",
+    "icons": [
+      {
+        "src": "data:image/webp;base64,UklGRvgMAABXRUJQ...YOUR_LONG_BASE64_ICON_HERE...",
+        "sizes": "512x512",
+        "type": "image/webp"
+      }
+    ]
+  }
+  </script>
   <style>
 body {
   font-family: 'Segoe UI', sans-serif;
@@ -429,17 +423,11 @@ body.light .filters-container select {
 <body>
   <div class="container">
     <h1>Faiza's Task Planner 💜</h1>
-
-    <!-- Search -->
     <div class="search-container">
       <button id="toggle-search" title="Search">🔍</button>
       <input type="text" id="search-bar" placeholder="Search tasks..." />
     </div>
-
-    <!-- FAB Button -->
     <button id="toggle-form-btn" class="fab" title="Add New Task">＋</button>
-
-    <!-- Filters -->
     <div class="filters-container">
       <select title="Priority" id="filter-priority">
         <option value="all">All Priorities</option>
@@ -462,11 +450,9 @@ body.light .filters-container select {
       </select>
     </div>
 
-    <!-- Task List -->
     <div id="task-list"></div>
   </div>
 
-  <!-- MODAL -->
   <div id="task-modal" class="modal hidden">
     <div class="modal-content">
       <span id="close-modal" class="close-btn" title="Close">×</span>
@@ -482,7 +468,6 @@ body.light .filters-container select {
           <option value="Personal">Personal</option>
         </select>
 
-        <!-- ✅ Fixed this line below -->
         <select title="Priority" id="task-priority" required>
           <option value="Low">Low Priority</option>
           <option value="Normal" selected>Normal Priority</option>
@@ -505,12 +490,9 @@ body.light .filters-container select {
     </div>
   </div>
   <script>
-    // Zade's Rewritten Full Script — Structured, Clean & Bulletproof
 
 document.addEventListener("DOMContentLoaded", () => {
   let editingTaskId = null;
-
-  // === DOM Elements ===
   const form = document.getElementById("task-form");
   const titleInput = document.getElementById("task-title");
   const categoryInput = document.getElementById("task-category");
@@ -529,8 +511,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const filterCategory = document.getElementById("filter-category");
   const modal = document.getElementById("task-modal");
   const closeModal = document.getElementById("close-modal");
-
-  // === Sorting Dropdown ===
   const sortSelect = document.createElement("select");
   sortSelect.id = "sort-options";
   sortSelect.innerHTML = `
@@ -543,8 +523,6 @@ document.addEventListener("DOMContentLoaded", () => {
   `;
   document.querySelector(".filters-container").appendChild(sortSelect);
   sortSelect.value = "dueDate-asc";
-
-  // === Load State ===
   let tasks = [];
   try {
     const saved = localStorage.getItem("tasks");
@@ -556,11 +534,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   localStorage.setItem("tasks", JSON.stringify(tasks));
   renderTasks();
-
-  // === Add/Edit Task ===
   form.addEventListener("submit", (e) => {
     e.preventDefault();
-
     const task = {
       id: editingTaskId || Date.now(),
       title: titleInput.value,
@@ -601,8 +576,6 @@ document.addEventListener("DOMContentLoaded", () => {
       const categoryMatch = filterCategory.value === "all" || task.category === filterCategory.value;
       return combinedText.includes(searchQuery) && priorityMatch && statusMatch && categoryMatch;
     });
-
-    // === Sorting ===
     const sortOption = sortSelect.value;
     if (sortOption.includes("dateAdded")) {
       filteredTasks.sort((a, b) => new Date(a.dateAdded) - new Date(b.dateAdded));
@@ -615,8 +588,6 @@ document.addEventListener("DOMContentLoaded", () => {
       filteredTasks.sort((a, b) => new Date(`${a.dueDate}T${a.dueTime}`) - new Date(`${b.dueDate}T${b.dueTime}`));
       if (sortOption.endsWith("desc")) filteredTasks.reverse();
     }
-
-    // === Render Cards ===
     filteredTasks.forEach((task) => {
       const taskCard = document.createElement("div");
       taskCard.classList.add("task-card", task.priority.toLowerCase());
@@ -668,8 +639,6 @@ document.addEventListener("DOMContentLoaded", () => {
       taskList.appendChild(taskCard);
     });
   }
-
-  // === Modal Controls ===
   toggleFormBtn?.addEventListener("click", () => {
     modal.classList.remove("hidden");
     form.reset();
@@ -680,14 +649,11 @@ document.addEventListener("DOMContentLoaded", () => {
     modal.classList.add("hidden");
     editingTaskId = null;
   });
-
-  // === Search & Filters ===
   searchBar?.addEventListener("input", renderTasks);
   filterPriority.addEventListener("change", renderTasks);
   filterStatus.addEventListener("change", renderTasks);
   filterCategory.addEventListener("change", renderTasks);
   sortSelect.addEventListener("change", renderTasks);
-
   toggleSearchBtn?.addEventListener("click", () => {
     searchContainer.classList.toggle("search-visible");
     if (searchContainer.classList.contains("search-visible")) {
@@ -698,7 +664,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // === Notifications ===
   function checkForDueTasks() {
     const now = new Date();
     tasks.forEach(task => {
@@ -718,7 +683,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // === Recurring Tasks ===
   function handleRecurringTasks(taskArray) {
     const now = new Date();
     return taskArray.flatMap((task) => {
@@ -743,7 +707,6 @@ document.addEventListener("DOMContentLoaded", () => {
     renderTasks();
   }, 60000);
 
-  // === Theme ===
   const savedTheme = localStorage.getItem("theme") || "dark";
   document.body.className = savedTheme;
 });
