@@ -471,7 +471,8 @@ body.light .filters-container select {
         </select>
 
         <button type="submit" title="Submit Task">Add Task</button>
-      </form> 
+      <button onclick="testPush()">🔔 Test Notification</button>
+</form> 
     </div>
   </div>
   <script>
@@ -697,7 +698,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
    if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js')
+  navigator.serviceWorker.register('/sw.js')
       .then(reg => console.log('SW registered', reg))
       .catch(err => console.error('Service worker failed:', err));
   });
@@ -716,6 +717,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 }
+             });
+    });
+  }
 </script>
 </body>
 </html>
