@@ -479,8 +479,7 @@ body.light .filters-container select {
 </form> 
     </div>
   </div>
-  <script>
-
+<script>
 document.addEventListener("DOMContentLoaded", () => {
   let editingTaskId = null;
   const form = document.getElementById("task-form");
@@ -492,38 +491,40 @@ document.addEventListener("DOMContentLoaded", () => {
   const notesInput = document.getElementById("task-notes");
   const repeatInput = document.getElementById("task-repeat");
   const taskList = document.getElementById("task-list");
-  const searchBar = document.getElementById("search-bar");
-  const toggleSearchBtn = document.getElementById("toggle-search");
-  const searchContainer = document.querySelector(".search-container");
-  const toggleFormBtn = document.getElementById("toggle-form-btn");
-  const filterPriority = document.getElementById("filter-priority");
-  const filterStatus = document.getElementById("filter-status");
-  const filterCategory = document.getElementById("filter-category");
   const modal = document.getElementById("task-modal");
   const closeModal = document.getElementById("close-modal");
+  const toggleFormBtn = document.getElementById("toggle-form-btn");
+
+  // Sorting dropdown
   const sortSelect = document.createElement("select");
-  sortSelect.id = "sort-options";
+  sortSelect.id = "sortTasks";
   sortSelect.innerHTML = `
-    <option value="dueDate-asc">Due Date (Soonest)</option>
-    <option value="dueDate-desc">Due Date (Latest)</option>
-    <option value="dateAdded-asc">Date Added (Asc)</option>
-    <option value="dateAdded-desc">Date Added (Desc)</option>
-    <option value="priority-asc">Priority (Low → High)</option>
-    <option value="priority-desc">Priority (High → Low)</option>
+    <option value="dateAsc">Due Date (Asc)</option>
+    <option value="dateDesc">Due Date (Desc)</option>
   `;
-  document.querySelector(".filters-container").appendChild(sortSelect);
-  sortSelect.value = "dueDate-asc";
-  let tasks = [];
-  try {
-    const saved = localStorage.getItem("tasks");
-    if (saved) tasks = JSON.parse(saved);
-    tasks = handleRecurringTasks(tasks);
-  } catch (err) {
-    console.error("Corrupt localStorage. Resetting tasks.", err);
-    localStorage.removeItem("tasks");
+  document.querySelector(".filters-container")?.appendChild(sortSelect);
+
+  let tasks = JSON.parse(localStorage.getItem("tasks") || "[]");
+
+  function renderTasks(sortBy = "dateAsc") {
+    const sorted = tasks.sort((a, b) => {
+      const dA = new Date(`${a.dueDate}T${a.dueTime}`);
+      const dB = new Date(`${b.dueDate}T${b.dueTime}`);
+      return sortBy === "dateAsc" ? dA - dB : dB - dA;
+    });
+
+    taskList.innerHTML = sorted.map(task => `
+      <div class="task-card ${task.priority.toLowerCase()}">
+        <h3>${task.title}</h3>
+        <p><strong>Due:</strong> ${task.dueDate} at ${task.dueTime}</p>
+        <p><strong>Priority:</strong> ${task.priority}</p>
+        <p><strong>Category:</strong> ${task.category}</p>
+        <p><strong>Repeat:</strong> ${task.repeat}</p>
+        <p>${task.notes}</p>
+      </div>
+    `).join('');
   }
-  localStorage.setItem("tasks", JSON.stringify(tasks));
-  renderTasks();
+
   form.addEventListener("submit", (e) => {
     e.preventDefault();
     const task = {
@@ -534,10 +535,10 @@ document.addEventListener("DOMContentLoaded", () => {
       dueDate: dueDateInput.value,
       dueTime: timeInput.value,
       notes: notesInput.value,
-      repeat: repeatInput?.value || "none",
+      repeat: repeatInput.value || "none",
       completed: false,
       notified: false,
-      dateAdded: editingTaskId ? tasks.find(t => t.id === editingTaskId).dateAdded : new Date().toISOString(),
+      dateAdded: new Date().toISOString(),
     };
 
     if (editingTaskId) {
@@ -548,222 +549,26 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     localStorage.setItem("tasks", JSON.stringify(tasks));
-    renderTasks();
+    renderTasks(sortSelect.value);
     form.reset();
     modal.classList.add("hidden");
   });
 
-  // === Render Function ===
-  function renderTasks() {
-    taskList.innerHTML = "";
-    const now = new Date();
-    const searchQuery = searchBar?.value.toLowerCase() || "";
+  sortSelect.addEventListener("change", () => {
+    renderTasks(sortSelect.value);
+  });
 
-    let filteredTasks = tasks.filter(task => {
-      const combinedText = `${task.title} ${task.category} ${task.notes} ${task.priority} ${task.repeat} ${task.dueDate} ${task.dueTime}`.toLowerCase();
-      const priorityMatch = filterPriority.value === "all" || task.priority === filterPriority.value;
-      const statusMatch = filterStatus.value === "all" || (filterStatus.value === "completed" && task.completed) || (filterStatus.value === "pending" && !task.completed);
-      const categoryMatch = filterCategory.value === "all" || task.category === filterCategory.value;
-      return combinedText.includes(searchQuery) && priorityMatch && statusMatch && categoryMatch;
-    });
-    const sortOption = sortSelect.value;
-    if (sortOption.includes("dateAdded")) {
-      filteredTasks.sort((a, b) => new Date(a.dateAdded) - new Date(b.dateAdded));
-      if (sortOption.endsWith("desc")) filteredTasks.reverse();
-    } else if (sortOption.includes("priority")) {
-      const order = { "Low": 1, "Normal": 2, "High": 3 };
-      filteredTasks.sort((a, b) => order[a.priority] - order[b.priority]);
-      if (sortOption.endsWith("desc")) filteredTasks.reverse();
-    } else if (sortOption.includes("dueDate")) {
-      filteredTasks.sort((a, b) => new Date(`${a.dueDate}T${a.dueTime}`) - new Date(`${b.dueDate}T${b.dueTime}`));
-      if (sortOption.endsWith("desc")) filteredTasks.reverse();
-    }
-    filteredTasks.forEach((task) => {
-      const taskCard = document.createElement("div");
-      taskCard.classList.add("task-card", task.priority.toLowerCase());
-      if (task.completed) taskCard.classList.add("completed");
-
-      const dueDateTime = new Date(`${task.dueDate}T${task.dueTime}`);
-      if (dueDateTime < now && !task.completed) {
-        taskCard.classList.add("overdue");
-      }
-
-      taskCard.innerHTML = `
-        <div class="task-actions">
-          <button class="edit-btn" title="Edit Task">✎</button>
-          <button class="complete-btn" title="${task.completed ? 'Mark as undone' : 'Mark as done'}">${task.completed ? "↺" : "✔"}</button>
-          <button class="delete-btn" title="Delete Task">✘</button>
-        </div>
-        <h3>${task.title}</h3>
-        <p><strong>Category:</strong> ${task.category || "—"}</p>
-        <p><strong>Due:</strong> ${task.dueDate} at ${task.dueTime}</p>
-        <p><strong>Priority:</strong> ${task.priority}</p>
-        <p><strong>Repeat:</strong> ${task.repeat || "None"}</p>
-        <p>${task.notes}</p>
-      `;
-
-      taskCard.querySelector(".complete-btn").addEventListener("click", () => {
-        task.completed = !task.completed;
-        localStorage.setItem("tasks", JSON.stringify(tasks));
-        renderTasks();
-      });
-
-      taskCard.querySelector(".delete-btn").addEventListener("click", () => {
-        tasks = tasks.filter(t => t.id !== task.id);
-        localStorage.setItem("tasks", JSON.stringify(tasks));
-        renderTasks();
-      });
-
-      taskCard.querySelector(".edit-btn").addEventListener("click", () => {
-        titleInput.value = task.title;
-        categoryInput.value = task.category;
-        priorityInput.value = task.priority;
-        dueDateInput.value = task.dueDate;
-        timeInput.value = task.dueTime;
-        notesInput.value = task.notes;
-        repeatInput.value = task.repeat;
-        editingTaskId = task.id;
-        modal.classList.remove("hidden");
-      });
-
-      taskList.appendChild(taskCard);
-    });
-  }
   toggleFormBtn?.addEventListener("click", () => {
-    modal.classList.remove("hidden");
     form.reset();
-    editingTaskId = null;
+    modal.classList.remove("hidden");
   });
 
   closeModal?.addEventListener("click", () => {
     modal.classList.add("hidden");
-    editingTaskId = null;
-  });
-  searchBar?.addEventListener("input", renderTasks);
-  filterPriority.addEventListener("change", renderTasks);
-  filterStatus.addEventListener("change", renderTasks);
-  filterCategory.addEventListener("change", renderTasks);
-  sortSelect.addEventListener("change", renderTasks);
-  toggleSearchBtn?.addEventListener("click", () => {
-    searchContainer.classList.toggle("search-visible");
-    if (searchContainer.classList.contains("search-visible")) {
-      searchBar.focus();
-    } else {
-      searchBar.value = "";
-      renderTasks();
-    }
   });
 
-  function checkForDueTasks() {
-    const now = new Date();
-    tasks.forEach(task => {
-      if (task.completed || task.notified) return;
-      const due = new Date(`${task.dueDate}T${task.dueTime}`);
-      const timeDiff = due.getTime() - now.getTime();
-      if (timeDiff > 0 && timeDiff <= 60000) {
-        task.notified = true;
-        localStorage.setItem("tasks", JSON.stringify(tasks));
-        if (Notification.permission === "granted") {
-          new Notification("🔔 Task Reminder", {
-            body: `${task.title} is due now!`,
-            icon: "https://cdn-icons-png.flaticon.com/512/1827/1827392.png",
-          });
-        }
-      }
-    });
-  }
-
-  function handleRecurringTasks(taskArray) {
-    const now = new Date();
-    return taskArray.flatMap((task) => {
-      if (!task.repeat || task.repeat === "none" || !task.completed) return [task];
-      const taskDateTime = new Date(`${task.dueDate}T${task.dueTime}`);
-      if (now > taskDateTime) {
-        const nextTask = { ...task, id: Date.now(), completed: false, notified: false };
-        const nextDate = new Date(taskDateTime);
-        if (task.repeat === "daily") nextDate.setDate(nextDate.getDate() + 1);
-        else if (task.repeat === "weekly") nextDate.setDate(nextDate.getDate() + 7);
-        else if (task.repeat === "monthly") nextDate.setMonth(nextDate.getMonth() + 1);
-        nextTask.dueDate = nextDate.toISOString().split("T")[0];
-        nextTask.dateAdded = new Date().toISOString();
-        return [task, nextTask];
-      }
-      return [task];
-    });
-  }
-
-  setInterval(() => {
-    checkForDueTasks();
-    renderTasks();
-  }, 60000);
-
-  const savedTheme = localStorage.getItem("theme") || "dark";
-  document.body.className = savedTheme;
+  renderTasks(); // Initial render
 });
-   if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-  navigator.serviceWorker.register('/sw.js')
-      .then(reg => console.log('SW registered', reg))
-      .catch(err => console.error('Service worker failed:', err));
-  });
-     if ('Notification' in window && navigator.serviceWorker) {
-  Notification.requestPermission().then(permission => {
-    if (permission === 'granted') {
-      console.log('Notification permission granted.');
-    }
-  });
-       function testPush() {
-  navigator.serviceWorker.ready.then(registration => {
-    registration.showNotification('Task Alert', {
-      body: 'Your task starts in 10 minutes!',
-      icon: '/icon.webp',
-      badge: '/icon.webp'
-    });
-  });
-}
-       form.addEventListener('submit', function (e) {
-  e.preventDefault(); // Stop default form submission
-  addTask();
-  modal.classList.remove('active');
-  form.reset();
-});
-       function addTask() {
-  const title = document.getElementById('title').value.trim();
-  const dueDate = document.getElementById('dueDate').value;
-
-  if (!title || !dueDate) return;
-
-  const task = {
-    title,
-    dueDate,
-    created: new Date().toISOString()
-  };
-
-  const tasks = JSON.parse(localStorage.getItem("tasks") || "[]");
-  tasks.push(task);
-  localStorage.setItem("tasks", JSON.stringify(tasks));
-  displayTasks(sortSelect.value);
-}
-             });
-     const sortSelect = document.getElementById('sortTasks');
-
-sortSelect.addEventListener('change', () => {
-  displayTasks(sortSelect.value);
-});
-     function displayTasks(sortBy = "dateAsc") {
-  const tasks = JSON.parse(localStorage.getItem("tasks") || "[]");
-  const sorted = tasks.sort((a, b) => {
-    const dA = new Date(a.dueDate);
-    const dB = new Date(b.dueDate);
-    return sortBy === "dateAsc" ? dA - dB : dB - dA;
-  });
-
-  taskList.innerHTML = sorted.map(task =>
-    `<div><strong>${task.title}</strong><br><small>${new Date(task.dueDate).toLocaleString()}</small></div>`
-  ).join('');
-}
-    });
-  }
 </script>
 </body>
 </html>
