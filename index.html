@@ -474,8 +474,10 @@ body.light .filters-container select {
     </div>
   <div class="top-bar">
 </div>
-    <button onclick="testPush()">🔔 Test Notification</button>
 </div>
+<button onclick="testPush()">🔔 Test Notification</button>
+<button id="installBtn" onclick="installPWA()" style="display:none;">📲 Install App</button>
+
 <script>
 document.addEventListener("DOMContentLoaded", () => {
   let editingTaskId = null;
@@ -764,6 +766,19 @@ sortSelect.value = "dueDate-asc";
       });
     }
   }
+   function installPWA() {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then(choice => {
+        if (choice.outcome === "accepted") {
+          console.log("User accepted the A2HS prompt");
+        } else {
+          console.log("User dismissed the prompt");
+        }
+        deferredPrompt = null;
+      });
+    }
+   }
 </script>
 </body>
 </html>
