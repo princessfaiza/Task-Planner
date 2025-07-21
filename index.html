@@ -473,8 +473,8 @@ body.light .filters-container select {
 </form> 
     </div>
   <div class="top-bar">
-  <button onclick="testPush()">🔔 Test Notification</button>
 </div>
+    <button onclick="testPush()">🔔 Test Notification</button>
 </div>
 <script>
 document.addEventListener("DOMContentLoaded", () => {
@@ -725,25 +725,45 @@ sortSelect.value = "dueDate-asc";
     renderTasks();
   }, 60000);
 
-  // === Theme ===
   const savedTheme = localStorage.getItem("theme") || "dark";
   document.body.className = savedTheme;
 });
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('data:application/javascript;charset=utf-8;base64,' + btoa(`
-        self.addEventListener('install', (e) => {
-          self.skipWaiting();
-        });
+    
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js')
+        .then(reg => {
+          console.log("SW registered", reg);
 
-        self.addEventListener('activate', (e) => {
-          self.clients.claim();
-        });
+          if (Notification.permission !== "granted") {
+            Notification.requestPermission().then(permission => {
+              if (permission !== "granted") {
+                console.warn("Notification permission not granted.");
+              }
+            });
+          }
+        })
+        .catch(err => console.error("SW registration failed:", err));
+    });
+  }
 
-        self.addEventListener('fetch', (event) => {
-          event.respondWith(fetch(event.request).catch(() => caches.match(event.request)));
+  function testPush() {
+    if (Notification.permission === "granted") {
+      navigator.serviceWorker.ready.then(reg => {
+        reg.showNotification("🔔 Task Reminder", {
+          body: "Your task is about to begin, Faiza.",
+          icon: "/icon.webp",
+          badge: "/icon.webp",
+          vibrate: [100, 50, 100]
         });
-      `)).catch((e) => console.error("Service worker failed:", e));
+      });
+    } else {
+      Notification.requestPermission().then(permission => {
+        if (permission === "granted") {
+          testPush(); 
+      });
     }
-  </script>
+  }
+</script>
 </body>
 </html>
