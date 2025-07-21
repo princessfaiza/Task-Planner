@@ -434,9 +434,13 @@ body.light .filters-container select {
         <option value="Personal">Personal</option>
       </select>
       <select id="sortTasks">
-  <option value="dateAsc">Sort by Date (Ascending)</option>
-  <option value="dateDesc">Sort by Date (Descending)</option>
-</select>
+ <option value="dueDate-asc">Due Date (Soonest)</option>
+    <option value="dueDate-desc">Due Date (Latest)</option>
+    <option value="dateAdded-asc">Date Added (Asc)</option>
+    <option value="dateAdded-desc">Date Added (Desc)</option>
+    <option value="priority-asc">Priority (Low → High)</option>
+    <option value="priority-desc">Priority (High → Low)</option>
+  </select>
     </div>
 
     <div id="task-list"></div>
@@ -473,16 +477,17 @@ body.light .filters-container select {
           <option value="weekly">Weekly</option>
           <option value="monthly">Monthly</option>
         </select>
-
-        <button type="submit" title="Submit Task">Add Task</button>
-      <button onclick="testPush()">🔔 Test Notification</button>
+<button type="submit" title="Submit Task">Add Task</button>
 </form> 
     </div>
-  </div>
+  <div class="top-bar">
+  <button onclick="testPush()">🔔 Test Notification</button>
+</div>
+</div>
 <script>
 document.addEventListener("DOMContentLoaded", () => {
   let editingTaskId = null;
-  const form = document.getElementById("task-form");
+   const form = document.getElementById("task-form");
   const titleInput = document.getElementById("task-title");
   const categoryInput = document.getElementById("task-category");
   const priorityInput = document.getElementById("task-priority");
@@ -491,27 +496,34 @@ document.addEventListener("DOMContentLoaded", () => {
   const notesInput = document.getElementById("task-notes");
   const repeatInput = document.getElementById("task-repeat");
   const taskList = document.getElementById("task-list");
+  const searchBar = document.getElementById("search-bar");
+  const toggleSearchBtn = document.getElementById("toggle-search");
+  const searchContainer = document.querySelector(".search-container");
+  const toggleFormBtn = document.getElementById("toggle-form-btn");
+  const filterPriority = document.getElementById("filter-priority");
+  const filterStatus = document.getElementById("filter-status");
+  const filterCategory = document.getElementById("filter-category");
   const modal = document.getElementById("task-modal");
   const closeModal = document.getElementById("close-modal");
-  const toggleFormBtn = document.getElementById("toggle-form-btn");
-
-  // Sorting dropdown
   const sortSelect = document.createElement("select");
   sortSelect.id = "sortTasks";
   sortSelect.innerHTML = `
-    <option value="dateAsc">Due Date (Asc)</option>
-    <option value="dateDesc">Due Date (Desc)</option>
+    <option value="dueDate-asc">Due Date (Soonest)</option>
+    <option value="dueDate-desc">Due Date (Latest)</option>
+    <option value="dateAdded-asc">Date Added (Asc)</option>
+    <option value="dateAdded-desc">Date Added (Desc)</option>
+    <option value="priority-asc">Priority (Low → High)</option>
+    <option value="priority-desc">Priority (High → Low)</option>
   `;
   document.querySelector(".filters-container")?.appendChild(sortSelect);
-
+sortSelect.value = "dueDate-asc";
   let tasks = JSON.parse(localStorage.getItem("tasks") || "[]");
-
   function renderTasks(sortBy = "dateAsc") {
     const sorted = tasks.sort((a, b) => {
       const dA = new Date(`${a.dueDate}T${a.dueTime}`);
       const dB = new Date(`${b.dueDate}T${b.dueTime}`);
       return sortBy === "dateAsc" ? dA - dB : dB - dA;
-    });
+    }); 
 
     taskList.innerHTML = sorted.map(task => `
       <div class="task-card ${task.priority.toLowerCase()}">
@@ -538,7 +550,7 @@ document.addEventListener("DOMContentLoaded", () => {
       repeat: repeatInput.value || "none",
       completed: false,
       notified: false,
-      dateAdded: new Date().toISOString(),
+       dateAdded: editingTaskId ? tasks.find(t => t.id === editingTaskId).dateAdded : new Date().toISOString(),
     };
 
     if (editingTaskId) {
@@ -567,7 +579,182 @@ document.addEventListener("DOMContentLoaded", () => {
     modal.classList.add("hidden");
   });
 
-  renderTasks(); // Initial render
+ function renderTasks() {
+    taskList.innerHTML = "";
+    const now = new Date();
+    const searchQuery = searchBar?.value.toLowerCase() || "";
+
+    let filteredTasks = tasks.filter(task => {
+      const combinedText = `${task.title} ${task.category} ${task.notes} ${task.priority} ${task.repeat} ${task.dueDate} ${task.dueTime}`.toLowerCase();
+      const priorityMatch = filterPriority.value === "all" || task.priority === filterPriority.value;
+      const statusMatch = filterStatus.value === "all" || (filterStatus.value === "completed" && task.completed) || (filterStatus.value === "pending" && !task.completed);
+      const categoryMatch = filterCategory.value === "all" || task.category === filterCategory.value;
+      return combinedText.includes(searchQuery) && priorityMatch && statusMatch && categoryMatch;
+    });
+
+    // === Sorting ===
+    const sortOption = sortSelect.value;
+    if (sortOption.includes("dateAdded")) {
+      filteredTasks.sort((a, b) => new Date(a.dateAdded) - new Date(b.dateAdded));
+      if (sortOption.endsWith("desc")) filteredTasks.reverse();
+    } else if (sortOption.includes("priority")) {
+      const order = { "Low": 1, "Normal": 2, "High": 3 };
+      filteredTasks.sort((a, b) => order[a.priority] - order[b.priority]);
+      if (sortOption.endsWith("desc")) filteredTasks.reverse();
+    } else if (sortOption.includes("dueDate")) {
+      filteredTasks.sort((a, b) => new Date(`${a.dueDate}T${a.dueTime}`) - new Date(`${b.dueDate}T${b.dueTime}`));
+      if (sortOption.endsWith("desc")) filteredTasks.reverse();
+    }
+
+    // === Render Cards ===
+    filteredTasks.forEach((task) => {
+      const taskCard = document.createElement("div");
+      taskCard.classList.add("task-card", task.priority.toLowerCase());
+      if (task.completed) taskCard.classList.add("completed");
+
+      const dueDateTime = new Date(`${task.dueDate}T${task.dueTime}`);
+      if (dueDateTime < now && !task.completed) {
+        taskCard.classList.add("overdue");
+      }
+
+      taskCard.innerHTML = `
+        <div class="task-actions">
+          <button class="edit-btn" title="Edit Task">✎</button>
+          <button class="complete-btn" title="${task.completed ? 'Mark as undone' : 'Mark as done'}">${task.completed ? "↺" : "✔"}</button>
+          <button class="delete-btn" title="Delete Task">✘</button>
+        </div>
+        <h3>${task.title}</h3>
+        <p><strong>Category:</strong> ${task.category || "—"}</p>
+        <p><strong>Due:</strong> ${task.dueDate} at ${task.dueTime}</p>
+        <p><strong>Priority:</strong> ${task.priority}</p>
+        <p><strong>Repeat:</strong> ${task.repeat || "None"}</p>
+        <p>${task.notes}</p>
+      `;
+
+      taskCard.querySelector(".complete-btn").addEventListener("click", () => {
+        task.completed = !task.completed;
+        localStorage.setItem("tasks", JSON.stringify(tasks));
+        renderTasks();
+      });
+
+      taskCard.querySelector(".delete-btn").addEventListener("click", () => {
+        tasks = tasks.filter(t => t.id !== task.id);
+        localStorage.setItem("tasks", JSON.stringify(tasks));
+        renderTasks();
+      });
+
+      taskCard.querySelector(".edit-btn").addEventListener("click", () => {
+        titleInput.value = task.title;
+        categoryInput.value = task.category;
+        priorityInput.value = task.priority;
+        dueDateInput.value = task.dueDate;
+        timeInput.value = task.dueTime;
+        notesInput.value = task.notes;
+        repeatInput.value = task.repeat;
+        editingTaskId = task.id;
+        modal.classList.remove("hidden");
+      });
+
+      taskList.appendChild(taskCard);
+    });
+  }
+
+  // === Modal Controls ===
+  toggleFormBtn?.addEventListener("click", () => {
+    modal.classList.remove("hidden");
+    form.reset();
+    editingTaskId = null;
+  });
+
+  closeModal?.addEventListener("click", () => {
+    modal.classList.add("hidden");
+    editingTaskId = null;
+  });
+
+  // === Search & Filters ===
+  searchBar?.addEventListener("input", renderTasks);
+  filterPriority.addEventListener("change", renderTasks);
+  filterStatus.addEventListener("change", renderTasks);
+  filterCategory.addEventListener("change", renderTasks);
+  sortSelect.addEventListener("change", renderTasks);
+
+  toggleSearchBtn?.addEventListener("click", () => {
+    searchContainer.classList.toggle("search-visible");
+    if (searchContainer.classList.contains("search-visible")) {
+      searchBar.focus();
+    } else {
+      searchBar.value = "";
+      renderTasks();
+    }
+  });
+
+  // === Notifications ===
+  function checkForDueTasks() {
+    const now = new Date();
+    tasks.forEach(task => {
+      if (task.completed || task.notified) return;
+      const due = new Date(`${task.dueDate}T${task.dueTime}`);
+      const timeDiff = due.getTime() - now.getTime();
+      if (timeDiff > 0 && timeDiff <= 60000) {
+        task.notified = true;
+        localStorage.setItem("tasks", JSON.stringify(tasks));
+        if (Notification.permission === "granted") {
+          new Notification("🔔 Task Reminder", {
+            body: `${task.title} is due now!`,
+            icon: "https://cdn-icons-png.flaticon.com/512/1827/1827392.png",
+          });
+        }
+      }
+    });
+  }
+
+  // === Recurring Tasks ===
+  function handleRecurringTasks(taskArray) {
+    const now = new Date();
+    return taskArray.flatMap((task) => {
+      if (!task.repeat || task.repeat === "none" || !task.completed) return [task];
+      const taskDateTime = new Date(`${task.dueDate}T${task.dueTime}`);
+      if (now > taskDateTime) {
+        const nextTask = { ...task, id: Date.now(), completed: false, notified: false };
+        const nextDate = new Date(taskDateTime);
+        if (task.repeat === "daily") nextDate.setDate(nextDate.getDate() + 1);
+        else if (task.repeat === "weekly") nextDate.setDate(nextDate.getDate() + 7);
+        else if (task.repeat === "monthly") nextDate.setMonth(nextDate.getMonth() + 1);
+        nextTask.dueDate = nextDate.toISOString().split("T")[0];
+        nextTask.dateAdded = new Date().toISOString();
+        return [task, nextTask];
+      }
+      return [task];
+    });
+  }
+
+  setInterval(() => {
+    checkForDueTasks();
+    renderTasks();
+  }, 60000);
+
+  // === Theme ===
+  const savedTheme = localStorage.getItem("theme") || "dark";
+  document.body.className = savedTheme;
+});
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('data:application/javascript;charset=utf-8;base64,' + btoa(`
+        self.addEventListener('install', (e) => {
+          self.skipWaiting();
+        });
+
+        self.addEventListener('activate', (e) => {
+          self.clients.claim();
+        });
+
+        self.addEventListener('fetch', (event) => {
+          event.respondWith(fetch(event.request).catch(() => caches.match(event.request)));
+        });
+      `)).catch((e) => console.error("Service worker failed:", e));
+    }
+  </script>
+</body>
+</html>
 });
 </script>
 </body>
