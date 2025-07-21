@@ -433,14 +433,6 @@ body.light .filters-container select {
         <option value="Work">Work</option>
         <option value="Personal">Personal</option>
       </select>
-      <select id="sortTasks">
- <option value="dueDate-asc">Due Date (Soonest)</option>
-    <option value="dueDate-desc">Due Date (Latest)</option>
-    <option value="dateAdded-asc">Date Added (Asc)</option>
-    <option value="dateAdded-desc">Date Added (Desc)</option>
-    <option value="priority-asc">Priority (Low → High)</option>
-    <option value="priority-desc">Priority (High → Low)</option>
-  </select>
     </div>
 
     <div id="task-list"></div>
@@ -753,9 +745,5 @@ sortSelect.value = "dueDate-asc";
       `)).catch((e) => console.error("Service worker failed:", e));
     }
   </script>
-</body>
-</html>
-});
-</script>
 </body>
 </html>
